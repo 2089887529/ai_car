@@ -1,0 +1,107 @@
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="aicar">
+    <!-- 参数 -->
+    <!-- 1.车辆尺寸 -->
+    <xacro:property name="car_length" default="1.2" />
+    <xacro:property name="car_width" default="0.8" />
+    <xacro:property name="car_height" default="0.4" />
+
+    <!-- 2.轮子尺寸 -->
+    <xacro:property name="wheel_width" default="0.1" />
+    <xacro:property name="wheel_radius" default="0.18" />
+
+    <!-- 3.离地间隙 -->
+    <xacro:property name="clearance" default="0.10" />
+
+    <!-- 4.惯性矩阵宏 (封装好的物理公式) -->
+    <!-- Box 的惯性矩阵 -->
+    <xacro:macro name="box_inertia" params="m w h d">
+        <inertial>
+            <mass value="${m}" />
+            <inertia
+                ixx="${(m/12) * (h*h + d*d)}" ixy="0.0" ixz="0.0"
+                iyy="${(m/12) * (w*w + d*d)}" iyz="0.0"
+                izz="${(m/12) * (w*w + h*h)}" />
+        </inertial>
+    </xacro:macro>
+
+    <!-- Cylinder 的惯性矩阵 -->
+    <xacro:macro name="cylinder_inertia" params="m r h">
+        <inertial>
+            <mass value="${m}" />
+            <inertia
+                ixx="${(m/12) * (3*r*r + h*h)}" ixy="0.0" ixz="0.0"
+                iyy="${(m/12) * (3*r*r + h*h)}" iyz="0.0"
+                izz="${(m/2) * (r*r)}" />
+        </inertial>
+    </xacro:macro>
+
+    <!-- 5.虚拟根节点(投影点) -->
+    <link name="base_footprint" />
+
+    <!-- 6.车身 Link -->
+    <link name="base_link">
+        <visual>
+            <geometry>
+                <box size="${car_length} ${car_width} ${car_height}" />
+            </geometry>
+            <!-- 材质颜色(可选) -->
+            <material name="bule">
+                <color rgba="0.1 0.1 1.0 1.0" />
+            </material>
+        </visual>
+
+        <collision>
+            <geometry>
+                <box size="${car_length} ${car_width} ${car_height}" />
+            </geometry>
+        </collision>
+
+        <xacro:box_inertia m="200.0" w="${car_width}" h="${car_height}" d="${car_length}" />
+    </link>
+
+    <!-- 7.关节:把车身驾在 Footprint 上 -->
+    <joint name="base_joint" type="fixed">
+        <parent link="base_footprint" />
+        <child link="base_link" />
+        <!-- Z轴抬高: 轮子半径 + 离地间隙 -->
+        <origin xyz="0.0 0.0 ${car_height/2 + clearance}" rpy="0.0 0.0 0.0" />
+    </joint>
+
+    <!-- 8.轮子宏 -->
+    <xacro:macro name="wheel" params="prefix x_reflect y_reflect">
+        <link name="${prefix}_link">
+            <visual>
+                <geometry>
+                    <cylinder radius="${wheel_radius}" length="${wheel_width}" />
+                </geometry>
+            </visual>
+
+            <xacro:cylinder_inertia m="2.0" r="${wheel_radius}" h="${wheel_width}" />
+        </link>
+
+
+        <joint name="${prefix}_joint" type="continuous">
+            <parent link="base_link" />
+            <child link="${prefix}_link" />
+
+            <!-- 
+               通用位置计算公式：
+               X: 车长的一半 * 系数。这里减 0.1 是为了让轮子不装在车头最顶端，稍微往里收一点(轴距)。
+               Y: 车宽的一半 + 轮子宽度的一半 -> 保证轮子紧贴车身侧面，不多不少。
+               Z: 轮子半径 - (离地间隙 + 车高的一半) -> 自动计算轮轴相对于车身中心的垂直偏移。
+            -->
+            <origin
+                xyz="${x_reflect * (car_length/2 - 0.1)} ${y_reflect * (car_width/2 + wheel_width/2)} ${wheel_radius - (clearance + car_height/2)}"
+                rpy="${-pi/2} 0 0" />
+
+            <!-- 绕哪个轴转? 因为上面 rpy 已经把 Z 轴转成指向侧面了,所以这里还是绕 Z 转 -->
+            <axis xyz="0 0 1" />
+        </joint>
+    </xacro:macro>
+
+    <!-- 9.调用宏生成4个轮子 -->
+    <xacro:wheel prefix="front_left" x_reflect="1" y_reflect="1" />
+    <xacro:wheel prefix="front_right" x_reflect="1" y_reflect="-1" />
+    <xacro:wheel prefix="rear_left" x_reflect="-1" y_reflect="1" />
+    <xacro:wheel prefix="rear_right" x_reflect="-1" y_reflect="-1" />
+</robot>
