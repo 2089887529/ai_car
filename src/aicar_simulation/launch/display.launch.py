@@ -28,6 +28,9 @@ def generate_launch_description():
 
     # 2.定位到xacro文件路径
     default_model_path = os.path.join(pkg_share, 'urdf', 'aicar.urdf.xacro')
+    
+    # RViz 配置文件路径
+    rviz_config  = os.path.join(pkg_share, 'rviz', 'display.rviz')
 
     # 3.核心逻辑: 使用 xacro 命令动态解析文件
     robot_description_str = Command(['xacro ', default_model_path])
@@ -50,6 +53,7 @@ def generate_launch_description():
         package="rviz2",
         executable="rviz2",
         name="rviz2",
+        arguments=['-d', rviz_config],
         output="screen"
     )
 
