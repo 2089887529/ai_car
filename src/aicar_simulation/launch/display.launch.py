@@ -27,7 +27,7 @@ def generate_launch_description():
     pkg_share = get_package_share_directory("aicar_simulation")
 
     # 2.定位到xacro文件路径
-    default_model_path = os.path.join(pkg_share, 'urdf', 'aicar.urdf.xacro')
+    default_model_path = os.path.join(pkg_share, 'urdf', 'jkgn_car_96.urdf.xacro')
     
     # RViz 配置文件路径
     rviz_config  = os.path.join(pkg_share, 'rviz', 'display.rviz')
