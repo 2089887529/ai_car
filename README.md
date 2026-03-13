@@ -28,6 +28,14 @@ sudo apt install ros-humble-xacro
 sudo apt install ros-humble-gazebo-ros-pkgs
 ```
 
+#### 3. joint_state_publisher_gui
+
+提供关节状态发布器的图形界面，用于 URDF 模型可视化调试。
+
+```bash
+sudo apt install ros-humble-joint-state-publisher-gui
+```
+
 #### 一键安装所有依赖
 
 ```bash
@@ -36,7 +44,8 @@ sudo apt update && sudo apt install \
   ros-humble-gazebo-ros-pkgs \
   ros-humble-gazebo-plugins \
   ros-humble-robot-state-publisher \
-  ros-humble-joint-state-publisher
+  ros-humble-joint-state-publisher \
+  ros-humble-joint-state-publisher-gui
 ```
 
 ---
