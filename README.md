@@ -37,8 +37,8 @@ aicar_simulation/
 
 | 传感器 | 参考型号 | 发布话题 |
 |--------|---------|---------|
-| 3D 激光雷达 | RoboSense Airy 96线 | `/velodyne_points` |
-| IMU | - | `/imu` |
+| 3D 激光雷达 | RoboSense Airy 96线 | `/points_raw` |
+| IMU | - | `/imu/data` |
 | RGB-D 相机 | Realsense D435 | `/camera/color/image_raw` |
 | 深度相机 | Realsense D435 | `/camera/depth/image_raw` `/camera/depth/points` |
 
@@ -162,13 +162,52 @@ SPAWN_POSITION  = (0.0, 0.0, 0.1)              # 机器人初始生成位置（z
 
 | 话题 | 消息类型 | 说明 |
 |------|---------|------|
-| `/velodyne_points` | `sensor_msgs/PointCloud2` | 3D 激光雷达点云 |
-| `/imu` | `sensor_msgs/Imu` | IMU 数据 |
+| `/points_raw` | `sensor_msgs/PointCloud2` | 3D 激光雷达点云 |
+| `/imu/data` | `sensor_msgs/Imu` | IMU 数据（ROS2 规范命名） |
 | `/odom` | `nav_msgs/Odometry` | 里程计 |
 | `/cmd_vel` | `geometry_msgs/Twist` | 速度控制指令 |
 | `/camera/color/image_raw` | `sensor_msgs/Image` | RGB 彩色图像 |
 | `/camera/depth/image_raw` | `sensor_msgs/Image` | 深度图像 |
 | `/camera/depth/points` | `sensor_msgs/PointCloud2` | 深度点云 |
+
+---
+
+## SLAM 建图
+
+使用 FAST-LIO2（Ericsii/FAST_LIO_ROS2）进行激光雷达惯性里程计建图。
+
+### 安装
+
+```bash
+mkdir -p ~/slam_ws/src && cd ~/slam_ws/src
+git clone https://github.com/Ericsii/FAST_LIO_ROS2.git --recursive
+git clone https://github.com/Ericsii/livox_ros_driver2.git --recursive
+cd ~/slam_ws
+colcon build --symlink-install
+```
+
+### 配置
+
+修改 `~/slam_ws/src/FAST_LIO_ROS2/config/velodyne.yaml`：
+
+```yaml
+lid_topic: "/points_raw"    # 对齐仿真雷达话题
+imu_topic: "/imu/data"      # 对齐仿真 IMU 话题
+```
+
+### 启动建图
+
+```bash
+# 终端1：启动仿真
+ros2 launch aicar_simulation gazebo.launch.py
+
+# 终端2：启动 FAST-LIO2
+source ~/slam_ws/install/setup.bash
+ros2 launch fast_lio mapping.launch.py config_file:=velodyne.yaml
+
+# 终端3：控制小车移动建图
+ros2 run teleop_twist_keyboard teleop_twist_keyboard
+```
 
 ---
 

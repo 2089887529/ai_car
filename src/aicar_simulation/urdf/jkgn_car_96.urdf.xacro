@@ -282,7 +282,7 @@
             </ray>
             <plugin name="gazebo_ros_ray_sensor" filename="libgazebo_ros_ray_sensor.so">
                 <ros>
-                    <remapping>~/out:=velodyne_points</remapping>
+                    <remapping>~/out:=points_raw</remapping>
                 </ros>
                 <output_type>sensor_msgs/PointCloud2</output_type>
                 <frame_name>laser_link</frame_name>
@@ -390,7 +390,7 @@
             </imu>
             <plugin name="imu_plugin" filename="libgazebo_ros_imu_sensor.so">
                 <ros>
-                    <remapping>~/out:=imu</remapping>
+                    <remapping>~/out:=imu/data</remapping>
                 </ros>
                 <frame_name>imu_link</frame_name>
                 <!-- 初始姿态偏置，通常设为全0 -->
