@@ -62,12 +62,12 @@
             </geometry>
         </collision>
 
-
         <xacro:box_inertia m="20.0" w="${car_width}" h="${car_height}" d="${car_length}" />
     </link>
     <gazebo reference="base_link">
         <material>Gazebo/Orange</material>
     </gazebo>
+
 
     <!-- 舵机驱动 link （虚拟的转向杆） -->
     <link name="steer_link">
@@ -181,6 +181,7 @@
     <xacro:front_wheel prefix="front_right" x_reflect="1" y_reflect="-1" />
     <xacro:rear_wheel prefix="rear_left" x_reflect="-1" y_reflect="1" />
     <xacro:rear_wheel prefix="rear_right" x_reflect="-1" y_reflect="-1" />
+      <!-- 轮子颜色 -->
     <gazebo reference="front_left_wheel_link">
         <material>Gazebo/DarkGrey</material>
     </gazebo>
@@ -265,7 +266,6 @@
 
     <!-- GazeboLiDAR插件 -->
     <gazebo reference="laser_link">
-        <material>Gazebo/White</material>
         <sensor name="rplidar" type="ray">
             <always_on>true</always_on>
             <visualize>false</visualize>
@@ -296,12 +296,16 @@
                     <stddev>0.01</stddev>
                 </noise>
             </ray>
-            <plugin name="gazebo_ros_ray_sensor" filename="libgazebo_ros_ray_sensor.so">
+            <plugin name="gazebo_ros_velodyne_laser" filename="libgazebo_ros_velodyne_laser.so">
                 <ros>
                     <remapping>~/out:=points_raw</remapping>
                 </ros>
-                <output_type>sensor_msgs/PointCloud2</output_type>
-                <frame_name>laser_link</frame_name>
+                <frameName>laser_link</frameName>
+                <organize_cloud>true</organize_cloud>
+                <min_range>0.1</min_range>
+                <max_range>60.0</max_range>
+                <gaussianNoise>0.01</gaussianNoise>
+                <useSystemTime>false</useSystemTime>
             </plugin>
         </sensor>
     </gazebo>
@@ -335,7 +339,7 @@
     <joint name="laser_joint" type="fixed">
         <parent link="laser_support_link" />
         <child link="laser_link" />
-        <origin xyz="0.0 0.0 ${support_length/2 + 0.025}" rpy="0.0 0.5236 0.0" />
+        <origin xyz="0.0 0.0 ${support_length/2 + 0.025}" rpy="0.0 0.5236 0.0"/>
     </joint>
 
     <!-- IMU -->
@@ -460,7 +464,7 @@
                 1. 绕Z轴旋转-90度（-pi/2）： 此时： Y前 X右 Z上
                 2. 绕X轴旋转-90度（-pi/2）： 此时： Z前 X右 Y下
             -->
-        <origin xyz="0.0 0.0 0.0" rpy="${-pi/2} 0.0 ${-pi/2}" />
+        <origin xyz="0.0 0.0 0.0" rpy="${-pi/2} 0.0 ${-pi/2}"/>
     </joint>
     <gazebo reference="camera_link">
         <!-- sensor 类型必须是 depth -->
