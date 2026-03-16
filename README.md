@@ -7,15 +7,19 @@
 ## 项目结构
 
 ```
-aicar_simulation/
-├── urdf/
-│   ├── akermann_car_16.urdf.xacro   # 基础阿克曼小车模型（16线雷达）
-│   └── jkgn_car_96.urdf.xacro       # 对齐真实车辆模型（96线雷达仿真）
-├── launch/
-│   ├── gazebo.launch.py             # Gazebo 仿真启动文件
-│   └── display.launch.py            # RViz 模型预览启动文件
-├── worlds/                          # 自定义仿真场景
-└── config/                          # 配置文件
+ai_car/src/
+├── aicar_simulation/
+│   ├── urdf/
+│   │   ├── akermann_car_16.urdf.xacro   # 基础阿克曼小车模型（16线雷达）
+│   │   └── jkgn_car_96.urdf.xacro       # 对齐真实车辆模型（96线雷达仿真）
+│   ├── launch/
+│   │   ├── gazebo.launch.py             # Gazebo 仿真启动文件
+│   │   └── display.launch.py            # RViz 模型预览启动文件
+│   ├── worlds/                          # 自定义仿真场景
+│   └── config/                          # 配置文件
+└── pointcloud_converter/
+    └── pointcloud_converter/
+        └── converter.py                 # 点云转换节点（补充 ring/time 字段）
 ```
 
 ---
@@ -162,7 +166,8 @@ SPAWN_POSITION  = (0.0, 0.0, 0.1)              # 机器人初始生成位置（z
 
 | 话题 | 消息类型 | 说明 |
 |------|---------|------|
-| `/points_raw` | `sensor_msgs/PointCloud2` | 3D 激光雷达点云 |
+| `/points_raw` | `sensor_msgs/PointCloud2` | 3D 激光雷达点云（仿真原始输出） |
+| `/points_raw_converted` | `sensor_msgs/PointCloud2` | 转换后点云（含 ring/time 字段，供 SLAM 使用） |
 | `/imu/data` | `sensor_msgs/Imu` | IMU 数据（ROS2 规范命名） |
 | `/odom` | `nav_msgs/Odometry` | 里程计 |
 | `/cmd_vel` | `geometry_msgs/Twist` | 速度控制指令 |
@@ -191,8 +196,11 @@ colcon build --symlink-install
 修改 `~/slam_ws/src/FAST_LIO_ROS2/config/velodyne.yaml`：
 
 ```yaml
-lid_topic: "/points_raw"    # 对齐仿真雷达话题
-imu_topic: "/imu/data"      # 对齐仿真 IMU 话题
+lid_topic: "/points_raw_converted"  # 订阅转换后的点云（含 ring/time）
+imu_topic: "/imu/data"              # 对齐仿真 IMU 话题
+scan_line: 24                       # 对齐 URDF 垂直采样数
+blind: 0.1                          # 最小有效距离（米）
+timestamp_unit: 0                   # 时间戳单位：秒
 ```
 
 ### 启动建图
@@ -201,11 +209,15 @@ imu_topic: "/imu/data"      # 对齐仿真 IMU 话题
 # 终端1：启动仿真
 ros2 launch aicar_simulation gazebo.launch.py
 
-# 终端2：启动 FAST-LIO2
-source ~/slam_ws/install/setup.bash
-ros2 launch fast_lio mapping.launch.py config_file:=velodyne.yaml
+# 终端2：启动点云转换节点（补充 ring/time 字段）
+source ~/ai_car/install/setup.bash
+ros2 run pointcloud_converter converter
 
-# 终端3：控制小车移动建图
+# 终端3：启动 FAST-LIO2
+source ~/slam_ws/install/setup.bash
+ros2 launch fast_lio mapping.launch.py
+
+# 终端4：控制小车移动建图
 ros2 run teleop_twist_keyboard teleop_twist_keyboard
 ```
 
