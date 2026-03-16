@@ -181,6 +181,7 @@
     <xacro:front_wheel prefix="front_right" x_reflect="1" y_reflect="-1" />
     <xacro:rear_wheel prefix="rear_left" x_reflect="-1" y_reflect="1" />
     <xacro:rear_wheel prefix="rear_right" x_reflect="-1" y_reflect="-1" />
+    <!-- 轮子颜色 -->
     <gazebo reference="front_left_wheel_link">
         <material>Gazebo/DarkGrey</material>
     </gazebo>
@@ -273,13 +274,13 @@
             <ray>
                 <scan>
                     <horizontal>
-                        <samples>240</samples>
+                        <samples>50</samples>
                         <resolution>1</resolution>
                         <min_angle>-3.1415926</min_angle>
                         <max_angle>3.1415926</max_angle>
                     </horizontal>
                     <vertical>
-                        <samples>24</samples>
+                        <samples>16</samples>
                         <resolution>1</resolution>
                         <min_angle>0.0</min_angle>
                         <max_angle>1.5708</max_angle>

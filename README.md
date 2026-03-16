@@ -65,32 +65,6 @@ ai_car/src/
 
 ---
 
-## 仿真场景
-
-### AWS RoboMaker Warehouse（推荐）
-
-仓库走廊场景，特征点丰富，适合 SLAM 建图验证。
-
-```bash
-# 下载场景（放在工作空间外，避免 colcon 编译报错）
-git clone https://github.com/aws-robotics/aws-robomaker-small-warehouse-world.git ~/aws-robomaker-small-warehouse-world
-
-# 设置模型路径（永久生效）
-echo 'export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:~/aws-robomaker-small-warehouse-world/models' >> ~/.bashrc
-source ~/.bashrc
-```
-
-在 `gazebo.launch.py` 顶部修改 `WORLD_FILE_PATH`：
-
-```python
-# 有屋顶版本
-WORLD_FILE_PATH = '/home/robot/aws-robomaker-small-warehouse-world/worlds/small_warehouse.world'
-# 无屋顶版本（更适合建图）
-WORLD_FILE_PATH = '/home/robot/aws-robomaker-small-warehouse-world/worlds/no_roof_small_warehouse.world'
-```
-
----
-
 ## 环境依赖
 
 - Ubuntu 22.04
@@ -153,11 +127,48 @@ ros2 launch aicar_simulation display.launch.py
 
 ```python
 PACKAGE_NAME    = 'aicar_simulation'           # 功能包名称
-XACRO_FILE_NAME = 'jkgn_car_96.urdf.xacro'    # URDF 文件名
-WORLD_FILE_PATH = '/path/to/your.world'         # Gazebo 世界文件路径
+XACRO_FILE_NAME = 'jkgn_car_96.urdf.xacro'    # URDF 文件名（见下方模型说明）
+WORLD_FILE_PATH = '/home/robot/aws-robomaker-small-warehouse-world/worlds/no_roof_small_warehouse.world'  # Gazebo 世界文件路径
 USE_SIM_TIME    = True                          # 是否使用仿真时间
 VERBOSE         = False                         # Gazebo 是否输出详细日志
 SPAWN_POSITION  = (0.0, 0.0, 0.1)              # 机器人初始生成位置（z 轴稍微抬高避免穿模）
+```
+
+### 切换机器人模型
+
+| 文件名 | 说明 |
+|--------|------|
+| `akermann_car_16.urdf.xacro` | 基础版，16线雷达，用于快速测试 |
+| `jkgn_car_96.urdf.xacro` | 完整版，对齐真实 RoboSense Airy，**推荐使用** |
+
+修改 `XACRO_FILE_NAME` 即可切换。
+
+### 切换仿真场景
+
+修改 `WORLD_FILE_PATH` 切换场景：
+
+```python
+# AWS 仓库（无屋顶，推荐，适合 SLAM 建图）
+WORLD_FILE_PATH = '/home/robot/aws-robomaker-small-warehouse-world/worlds/no_roof_small_warehouse.world'
+
+# AWS 仓库（有屋顶）
+WORLD_FILE_PATH = '/home/robot/aws-robomaker-small-warehouse-world/worlds/small_warehouse.world'
+
+# Gazebo 默认空场景
+WORLD_FILE_PATH = ''
+```
+
+### 下载 AWS 仓库场景
+
+> ⚠️ 必须放在工作空间外部，否则 colcon 编译时会报 catkin 错误
+
+```bash
+# 克隆到 home 目录（不要放在 ai_car/src 里）
+git clone https://github.com/aws-robotics/aws-robomaker-small-warehouse-world.git ~/aws-robomaker-small-warehouse-world
+
+# 设置模型路径（写入 ~/.bashrc 永久生效）
+echo 'export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:~/aws-robomaker-small-warehouse-world/models' >> ~/.bashrc
+source ~/.bashrc
 ```
 
 ---
@@ -174,52 +185,6 @@ SPAWN_POSITION  = (0.0, 0.0, 0.1)              # 机器人初始生成位置（z
 | `/camera/color/image_raw` | `sensor_msgs/Image` | RGB 彩色图像 |
 | `/camera/depth/image_raw` | `sensor_msgs/Image` | 深度图像 |
 | `/camera/depth/points` | `sensor_msgs/PointCloud2` | 深度点云 |
-
----
-
-## SLAM 建图
-
-使用 FAST-LIO2（Ericsii/FAST_LIO_ROS2）进行激光雷达惯性里程计建图。
-
-### 安装
-
-```bash
-mkdir -p ~/slam_ws/src && cd ~/slam_ws/src
-git clone https://github.com/Ericsii/FAST_LIO_ROS2.git --recursive
-git clone https://github.com/Ericsii/livox_ros_driver2.git --recursive
-cd ~/slam_ws
-colcon build --symlink-install
-```
-
-### 配置
-
-修改 `~/slam_ws/src/FAST_LIO_ROS2/config/velodyne.yaml`：
-
-```yaml
-lid_topic: "/points_raw_converted"  # 订阅转换后的点云（含 ring/time）
-imu_topic: "/imu/data"              # 对齐仿真 IMU 话题
-scan_line: 24                       # 对齐 URDF 垂直采样数
-blind: 0.1                          # 最小有效距离（米）
-timestamp_unit: 0                   # 时间戳单位：秒
-```
-
-### 启动建图
-
-```bash
-# 终端1：启动仿真
-ros2 launch aicar_simulation gazebo.launch.py
-
-# 终端2：启动点云转换节点（补充 ring/time 字段）
-source ~/ai_car/install/setup.bash
-ros2 run pointcloud_converter converter
-
-# 终端3：启动 FAST-LIO2
-source ~/slam_ws/install/setup.bash
-ros2 launch fast_lio mapping.launch.py
-
-# 终端4：控制小车移动建图
-ros2 run teleop_twist_keyboard teleop_twist_keyboard
-```
 
 ---
 
@@ -247,11 +212,11 @@ ros2 run gazebo_ros spawn_entity.py \
 </vertical>
 ```
 
-**3. 编译时报 catkin 找不到**
+**3. aws-robomaker-small-warehouse-world 放置位置**
 
-aws-robomaker-small-warehouse-world 是 ROS1 包，必须放在工作空间外：
-```bash
-mv ~/ai_car/src/aws-robomaker-small-warehouse-world ~/
-rm -rf ~/ai_car/build ~/ai_car/install ~/ai_car/log
-colcon build
+该场景是 ROS1 包，必须放在 `~/` 目录下，不能放在 `ai_car/src/` 里：
+
+```
+~/aws-robomaker-small-warehouse-world/   ✅ 正确
+~/ai_car/src/aws-robomaker-small-warehouse-world/  ❌ 错误，会导致编译报错
 ```

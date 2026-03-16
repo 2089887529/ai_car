@@ -26,7 +26,7 @@ from launch.actions import TimerAction
 def generate_launch_description():
     # 基础配置
     PACKAGE_NAME = 'aicar_simulation'           #功能包名称
-    XACRO_FILE_NAME = 'jkgn_car_96.urdf.xacro'   #urdf文件名称，位于功能包的urdf目录下
+    XACRO_FILE_NAME = 'akermann_car_16.urdf.xacro'   #urdf文件名称，位于功能包的urdf目录下
     WORLD_FILE_PATH = '/home/robot/aws-robomaker-small-warehouse-world/worlds/no_roof_small_warehouse.world'  #gazebo 世界文件路径
     USE_SIM_TIME = True  #是否使用仿真时间
     VERBOSE = False       #Gazebo是否输出详细日志
